@@ -286,6 +286,19 @@ function initMobileBottomNav() {
     document.querySelectorAll('.mob-nav-btn[data-mob-target]').forEach(btn => {
         btn.addEventListener('click', () => {
             const target = btn.dataset.mobTarget;
+            
+            // Intercept Templates to open the premium Templates Modal directly!
+            if (target === 'panel_templates') {
+                openTemplatesModal();
+                return;
+            }
+            
+            // Intercept AI to open the AI modal directly!
+            if (target === 'panel_ai') {
+                openAIModal();
+                return;
+            }
+
             const tabNames = {
                 panel_templates: 'Templates',
                 panel_assets: 'Assets',
