@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vercel
+.next/
+dist/
+
+# Private/Temp Files
+cookies.json
+test_*.js
+*.log
+.gemini/
