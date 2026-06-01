@@ -965,9 +965,146 @@ input[type="range"] {
         font-size: 0.9rem;
     }
 
-    /* hide desktop brand title in mobile sheet */
-    .brand-title {
-        display: none;
+    /* ── Templates & AI Modals Mobile Responsive Overrides ── */
+    #templates_modal .templates-modal-container {
+        width: 96% !important;
+        height: 92vh !important;
+        max-width: none !important;
+        border-radius: 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow-y: auto !important; /* Enable smooth outer vertical scroll */
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    #ai_modal .templates-modal-container {
+        width: 96% !important;
+        height: 92vh !important;
+        max-width: none !important;
+        border-radius: 12px !important;
+    }
+
+    #templates_modal .templates-modal-header {
+        padding: 12px 15px !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
+        background: #0B0F19 !important; /* Match container dark background */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    #ai_modal .templates-modal-header {
+        padding: 12px 15px !important;
+    }
+
+    #templates_modal .templates-modal-header h2,
+    #ai_modal .templates-modal-header h2 {
+        font-size: 1.1rem !important;
+    }
+
+    #templates_modal .templates-modal-header p,
+    #ai_modal .templates-modal-header p {
+        display: none !important; /* Hide long description on mobile to save space */
+    }
+
+    #templates_modal .templates-modal-header button,
+    #ai_modal .templates-modal-header button {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        font-size: 1rem !important;
+    }
+
+    #templates_modal .templates-modal-controls,
+    #ai_modal .templates-modal-controls {
+        padding: 12px 15px !important;
+        gap: 8px !important;
+    }
+
+    #templates_modal .templates-modal-controls input,
+    #ai_modal .templates-modal-controls input {
+        padding: 10px 15px 10px 35px !important;
+        font-size: 0.78rem !important;
+    }
+
+    #templates_modal .templates-modal-controls i {
+        left: 12px !important;
+        font-size: 0.85rem !important;
+    }
+
+    #templates_modal .templates-modal-categories,
+    #ai_modal .templates-modal-categories {
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        flex-wrap: nowrap !important;
+        display: flex !important;
+        padding-bottom: 5px !important;
+        width: 100% !important;
+    }
+
+    #templates_modal .templates-modal-categories::-webkit-scrollbar,
+    #ai_modal .templates-modal-categories::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    #templates_modal .templates-modal-categories span,
+    #ai_modal .templates-modal-categories span {
+        display: none !important; /* Hide "FILTER BY:" text on mobile to save horizontal space */
+    }
+
+    #templates_modal .template-cat-pill,
+    #ai_modal .template-cat-pill {
+        flex: 0 0 auto !important;
+        padding: 6px 12px !important;
+        font-size: 0.65rem !important;
+    }
+
+    #templates_modal .templates-modal-grid-container {
+        padding: 12px !important;
+        overflow-y: visible !important; /* Remove internal vertical scroll zone */
+        height: auto !important;
+        flex: none !important;
+    }
+
+    #ai_modal .templates-modal-grid-container {
+        padding: 12px !important;
+    }
+
+    .modal-templates-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; /* Premium 2-column grid on mobile */
+        gap: 12px !important;
+    }
+
+    .template-card .template-thumb {
+        height: 100px !important;
+        font-size: 2rem !important;
+    }
+
+    .template-card .template-info {
+        padding: 10px !important;
+    }
+
+    .template-card .template-title {
+        font-size: 0.78rem !important;
+        margin-bottom: 4px !important;
+    }
+
+    .template-card .template-desc {
+        font-size: 0.68rem !important;
+        height: 28px !important;
+        margin-bottom: 8px !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .template-card .template-load-btn {
+        font-size: 0.62rem !important;
+        padding: 5px 8px !important;
+        border-radius: 4px !important;
     }
 }
 
