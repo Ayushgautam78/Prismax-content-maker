@@ -227,6 +227,17 @@ const switchTab = (targetId, tabName) => {
             // Properties sheet
             document.getElementById('right_sidebar').classList.add('sheet-open');
             document.getElementById('left_sidebar').classList.remove('sheet-open');
+
+            // Virtual keyboard trigger when editing text from floating bar Edit button
+            const sel = canvas ? canvas.getActiveObject() : null;
+            if (sel && (sel.type === 'textbox' || sel.type === 'i-text' || sel.type === 'text')) {
+                setTimeout(() => {
+                    sel.enterEditing();
+                    if (sel.hiddenTextarea) {
+                        sel.hiddenTextarea.focus();
+                    }
+                }, 100);
+            }
         } else {
             document.getElementById('right_sidebar').classList.remove('sheet-open');
             document.getElementById('left_sidebar').classList.add('sheet-open');
@@ -276,9 +287,16 @@ function initMobileBottomNav() {
         btn.addEventListener('click', () => {
             const target = btn.dataset.mobTarget;
             const tabNames = {
-                panel_assets: 'Assets', panel_text: 'Text', panel_shapes: 'Shapes',
-                panel_bg: 'Background', panel_layers: 'Layers', panel_frames: 'Frames',
-                panel_ai: 'AI', panel_props: 'Edit'
+                panel_templates: 'Templates',
+                panel_assets: 'Assets',
+                panel_text: 'Text',
+                panel_shapes: 'Shapes',
+                panel_frames: 'Frames',
+                panel_arrows: 'Arrow',
+                panel_bg: 'Background',
+                panel_layers: 'Layers',
+                panel_ai: 'AI',
+                panel_props: 'Edit'
             };
 
             // Toggle: if this sheet is already open, close it
@@ -293,6 +311,15 @@ function initMobileBottomNav() {
             switchTab(target, tabNames[target] || '');
         });
     });
+
+    // Theme toggle button
+    const themeBtn = document.getElementById('mob_btn_theme');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            document.getElementById('btn_theme_toggle_desk')?.click();
+            showToast("🎨 Theme toggled!");
+        });
+    }
 
     // Download button
     const dlBtn = document.getElementById('mob_btn_download');
@@ -969,6 +996,19 @@ function initFabric() {
                 canvas.requestRenderAll();
             }
         }
+        
+        // Single tap text auto-editing for mobile keyboard trigger
+        if (sel && (sel.type === 'textbox' || sel.type === 'i-text' || sel.type === 'text')) {
+            if (isMobile) {
+                setTimeout(() => {
+                    sel.enterEditing();
+                    if (sel.hiddenTextarea) {
+                        sel.hiddenTextarea.focus();
+                    }
+                }, 100);
+            }
+        }
+
         updateConnections(); updatePropsPanel(); updateLayersPanel(); updateMobileObjectBar();
     });
     canvas.on('selection:updated', (e) => {
@@ -982,6 +1022,19 @@ function initFabric() {
                 canvas.requestRenderAll();
             }
         }
+
+        // Single tap text auto-editing for mobile keyboard trigger
+        if (sel && (sel.type === 'textbox' || sel.type === 'i-text' || sel.type === 'text')) {
+            if (isMobile) {
+                setTimeout(() => {
+                    sel.enterEditing();
+                    if (sel.hiddenTextarea) {
+                        sel.hiddenTextarea.focus();
+                    }
+                }, 100);
+            }
+        }
+
         updateConnections(); updatePropsPanel(); updateLayersPanel(); updateMobileObjectBar();
     });
     canvas.on('selection:cleared', (e) => { updateConnections(); updatePropsPanel(); updateLayersPanel(); updateMobileObjectBar(); });
