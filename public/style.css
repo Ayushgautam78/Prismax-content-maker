@@ -971,8 +971,7 @@ input[type="range"] {
         height: 92vh !important;
         max-width: none !important;
         border-radius: 12px !important;
-        display: flex !important;
-        flex-direction: column !important;
+        display: block !important; /* Switch to natural block layout to guarantee outer scrolling */
         overflow-y: auto !important; /* Enable smooth outer vertical scroll */
         overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
@@ -1066,6 +1065,7 @@ input[type="range"] {
         overflow-y: visible !important; /* Remove internal vertical scroll zone */
         height: auto !important;
         flex: none !important;
+        display: block !important; /* Ensure natural block layout flow */
     }
 
     #ai_modal .templates-modal-grid-container {

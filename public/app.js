@@ -1061,18 +1061,6 @@ function initFabric() {
                 canvas.requestRenderAll();
             }
         }
-        
-        // Single tap text auto-editing for mobile keyboard trigger
-        if (sel && (sel.type === 'textbox' || sel.type === 'i-text' || sel.type === 'text')) {
-            if (isMobile) {
-                setTimeout(() => {
-                    sel.enterEditing();
-                    if (sel.hiddenTextarea) {
-                        sel.hiddenTextarea.focus();
-                    }
-                }, 100);
-            }
-        }
 
         updateConnections(); updatePropsPanel(); updateLayersPanel(); updateMobileObjectBar();
     });
@@ -1085,18 +1073,6 @@ function initFabric() {
                 conn.cp.set({ opacity: 0.5 });
                 conn.cp.bringToFront();
                 canvas.requestRenderAll();
-            }
-        }
-
-        // Single tap text auto-editing for mobile keyboard trigger
-        if (sel && (sel.type === 'textbox' || sel.type === 'i-text' || sel.type === 'text')) {
-            if (isMobile) {
-                setTimeout(() => {
-                    sel.enterEditing();
-                    if (sel.hiddenTextarea) {
-                        sel.hiddenTextarea.focus();
-                    }
-                }, 100);
             }
         }
 
