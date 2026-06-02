@@ -1980,15 +1980,7 @@ function addText(type = 'body', forceFont = null) {
     canvas.add(text);
     canvas.setActiveObject(text);
 
-    // Enter editing mode and select all text automatically
-    text.enterEditing();
-    text.selectAll();
     canvas.requestRenderAll();
-
-    if (isMobile) {
-        document.getElementById('right_sidebar').classList.add('sheet-open');
-        document.querySelector('.nav-tab[data-target="panel_props"]').click();
-    }
 }
 
 function initFonts() {
