@@ -7236,7 +7236,6 @@ function renderDataTemplate(tpl) {
     
     // 4. Spawn elements with dynamic, vibrant color injection
     tpl.elements.forEach((el, index) => {
-        if (el.type === 'text' && isFlowchart) return;
         let spawned = null;
         
         // Color Enhancer logic to make everything colorful, eye-pleasing & premium!
@@ -7321,6 +7320,18 @@ function renderDataTemplate(tpl) {
         spawnedObjects.push(spawned);
     });
     
+    // 5. Spawn connections
+    if (tpl.connections && Array.isArray(tpl.connections)) {
+        setTimeout(() => {
+            tpl.connections.forEach(conn => {
+                const fromNode = spawnedObjects[conn.from];
+                const toNode = spawnedObjects[conn.to];
+                if (fromNode && toNode) {
+                    connectNodesForTemplate(fromNode, toNode, conn.color || '#D4AF37');
+                }
+            });
+        }, 150);
+    }
 
     // 6. Spawn a premium, highly visible EDITABLE sample instruction text box
     // so users immediately know exactly how to customize templates.
