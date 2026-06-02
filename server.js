@@ -73,11 +73,13 @@ app.post('/api/ai/generate', async (req, res) => {
         return res.status(400).json({ error: 'Prompt is required' });
     }
     
-    const GROQ_API_KEY = process.env.GROQ_API_KEY;
-    if (!GROQ_API_KEY) {
-        console.error("[API AI ERROR] GROQ_API_KEY environment variable is not configured!");
-        return res.status(500).json({ error: 'AI Generator: GROQ_API_KEY is not configured in environment variables!' });
-    }
+    try {
+        const GROQ_API_KEY = process.env.GROQ_API_KEY;
+        const GROQ_API_KEY_FALLBACK = process.env.GROQ_API_KEY_FALLBACK;
+        if (!GROQ_API_KEY && !GROQ_API_KEY_FALLBACK) {
+            console.error("[API AI ERROR] Neither GROQ_API_KEY nor GROQ_API_KEY_FALLBACK is configured!");
+            return res.status(500).json({ error: 'AI Generator: No Groq API Key is configured in environment variables!' });
+        }
     const MODEL = 'llama-3.3-70b-versatile';
     
     console.log(`[API AI] Generating design. Topic: "${prompt}", Style: ${styleTheme}, Layout: ${layoutFlow}, TemplateType: ${templateType}`);
@@ -241,11 +243,20 @@ CRITICAL SYSTEM OVERRIDE (NEVER BYPASS):
 - The ONLY images allowed on the canvas are the official brand logos: "/assets/logos/logo-prismax-02.png" (Premium gold for dark themes) and "/assets/logos/logo-prismax-01.png" (for light themes). Any other image paths will fail validation!
 `;
 
+    let response;
+    let tryFallback = false;
+    let apiKeyToUse = GROQ_API_KEY;
+
+    if (!apiKeyToUse) {
+        console.warn("[API AI] Primary GROQ_API_KEY is not defined. Using fallback key directly.");
+        apiKeyToUse = GROQ_API_KEY_FALLBACK;
+    }
+
     try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${GROQ_API_KEY}`,
+                "Authorization": `Bearer ${apiKeyToUse}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
@@ -260,10 +271,47 @@ CRITICAL SYSTEM OVERRIDE (NEVER BYPASS):
         });
         
         if (!response.ok) {
-            const errText = await response.text();
-            console.error(`[API AI] Groq API Error response:`, errText);
-            return res.status(response.status).json({ error: `Groq API Error: ${errText}` });
+            console.warn(`[API AI] Primary Groq API request failed with status ${response.status}.`);
+            tryFallback = true;
         }
+    } catch (err) {
+        console.error(`[API AI] Primary Groq API request encountered exception:`, err);
+        tryFallback = true;
+    }
+
+    // Failover to secondary fallback API key if primary key run out of credits or returned an error
+    if (tryFallback && GROQ_API_KEY && GROQ_API_KEY_FALLBACK) {
+        console.log("[API AI] Attempting fallback Groq API key...");
+        try {
+            response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${GROQ_API_KEY_FALLBACK}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: MODEL,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    temperature: 0.3,
+                    response_format: { type: "json_object" }
+                })
+            });
+            if (response.ok) {
+                console.log("[API AI] Fallback Groq API key request succeeded!");
+            }
+        } catch (fallbackErr) {
+            console.error(`[API AI] Fallback Groq API key request also failed:`, fallbackErr);
+        }
+    }
+
+    if (!response || !response.ok) {
+        const errText = response ? await response.text() : "No response from Groq AI server";
+        console.error(`[API AI] Both Groq API keys failed. Error:`, errText);
+        return res.status(response ? response.status : 500).json({ error: `Groq API Error: ${errText}` });
+    }
         
         const data = await response.json();
         

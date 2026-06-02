@@ -83,6 +83,44 @@ document.addEventListener("DOMContentLoaded", () => {
     initAIControls();
     initMobileBottomNav();
 
+    // Initialize base history state on mobile startup for back button interception
+    if (isMobile) {
+        history.replaceState({ type: 'base' }, '');
+    }
+
+    window.addEventListener('popstate', (event) => {
+        if (!isMobile) return;
+        
+        const templatesModal = document.getElementById('templates_modal');
+        const aiModal = document.getElementById('ai_modal');
+        const exportModal = document.getElementById('export_modal');
+        const leftSidebar = document.getElementById('left_sidebar');
+        const rightSidebar = document.getElementById('right_sidebar');
+        
+        let closedSomething = false;
+        
+        // 1. Close active full-screen modals first
+        if (templatesModal && !templatesModal.classList.contains('hidden')) {
+            closeTemplatesModal(true);
+            closedSomething = true;
+        }
+        if (aiModal && !aiModal.classList.contains('hidden')) {
+            closeAIModal(true);
+            closedSomething = true;
+        }
+        if (exportModal && !exportModal.classList.contains('hidden')) {
+            closeExportModal(true);
+            closedSomething = true;
+        }
+        
+        // 2. Close active slide-out sheets
+        if ((leftSidebar && leftSidebar.classList.contains('sheet-open')) || 
+            (rightSidebar && rightSidebar.classList.contains('sheet-open'))) {
+            closeMobileSheets(true);
+            closedSomething = true;
+        }
+    });
+
     window.addEventListener('resize', handleResize);
     window.addEventListener('focus', handleResize);
 
@@ -218,6 +256,10 @@ const switchTab = (targetId, tabName) => {
     if (panel) panel.classList.add('active');
 
     if (isMobile) {
+        // Track if any sheet was already open to avoid redundant pushStates
+        const alreadyOpen = document.getElementById('left_sidebar').classList.contains('sheet-open') || 
+                            document.getElementById('right_sidebar').classList.contains('sheet-open');
+
         // Update bottom nav active state
         document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
         const matchingBtn = document.querySelector(`.mob-nav-btn[data-mob-target="${targetId}"]`);
@@ -242,6 +284,12 @@ const switchTab = (targetId, tabName) => {
             document.getElementById('right_sidebar').classList.remove('sheet-open');
             document.getElementById('left_sidebar').classList.add('sheet-open');
         }
+
+        // Push history state if opening a sheet for the first time
+        if (!alreadyOpen) {
+            history.pushState({ sheet: 'open' }, '');
+        }
+
         // Show backdrop when any sheet opens
         const backdrop = document.getElementById('mob_sheet_backdrop');
         if (backdrop) backdrop.classList.add('visible');
@@ -251,8 +299,12 @@ const switchTab = (targetId, tabName) => {
     }
 };
 
-function closeMobileSheets() {
+function closeMobileSheets(viaPopstate = false) {
     if (!isMobile) return;
+    
+    const leftOpen = document.getElementById('left_sidebar')?.classList.contains('sheet-open');
+    const rightOpen = document.getElementById('right_sidebar')?.classList.contains('sheet-open');
+    
     document.getElementById('left_sidebar')?.classList.remove('sheet-open');
     document.getElementById('right_sidebar')?.classList.remove('sheet-open');
     document.getElementById('mob_sheet_backdrop')?.classList.remove('visible');
@@ -260,6 +312,11 @@ function closeMobileSheets() {
     
     // Show floating action bar again when sheet closes (if object selected)
     updateMobileObjectBar();
+
+    // Clean up history entry if closed manually via backdrop click or X button
+    if (!viaPopstate && (leftOpen || rightOpen)) {
+        history.back();
+    }
 }
 
 function initMobileBottomNav() {
@@ -609,15 +666,26 @@ function initUI() {
     // Download Bindings (Open Studio Export Settings Modal)
     const openExportModal = () => {
         const modal = document.getElementById('export_modal');
-        if (modal) modal.classList.remove('hidden');
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (isMobile) {
+                history.pushState({ modal: 'export' }, '');
+            }
+        }
+    };
+    window.closeExportModal = (viaPopstate = false) => {
+        const modal = document.getElementById('export_modal');
+        if (modal) modal.classList.add('hidden');
+        if (!viaPopstate && isMobile) {
+            history.back();
+        }
     };
     document.getElementById('btn_top_download')?.addEventListener('click', openExportModal);
     document.getElementById('btn_mobile_download')?.addEventListener('click', openExportModal);
 
     // Export Settings Modal Controls
     document.getElementById('btn_close_export_modal')?.addEventListener('click', () => {
-        const modal = document.getElementById('export_modal');
-        if (modal) modal.classList.add('hidden');
+        closeExportModal();
     });
 
     const pngRadio = document.getElementById('export_format_png');
@@ -2005,7 +2073,14 @@ function updatePropsPanel() {
         // Auto-cancellation of Crop Mode only if user clicks a non-crop canvas object
         // NOT when they click sidebar buttons (use isCropApplying guard for that)
         if (activeCropBox && !window._cropButtonClicked && (!active || active.id !== 'crop_box_temp')) {
-            cancelVisualCrop();
+            if (!active) {
+                // Prevent accidental tap deselection in crop mode on mobile (touch inaccuracy)
+                canvas.setActiveObject(activeCropBox);
+                canvas.requestRenderAll();
+            } else {
+                // Tapped another valid object -> cancel crop mode
+                cancelVisualCrop();
+            }
         }
         window._cropButtonClicked = false;
 
@@ -2768,7 +2843,8 @@ function bindPropertiesPanel() {
             cornerColor: '#FFD700',
             cornerStrokeColor: '#fff',
             borderColor: '#FFD700',
-            cornerSize: 14,
+            cornerSize: isMobile ? 28 : 14,
+            padding: isMobile ? 8 : 0,
             transparentCorners: false,
             hasRotatingPoint: false,
             lockRotation: true,
@@ -6953,11 +7029,18 @@ function openTemplatesModal() {
     });
     
     renderModalTemplates();
+
+    if (isMobile) {
+        history.pushState({ modal: 'templates' }, '');
+    }
 }
 
-function closeTemplatesModal() {
+function closeTemplatesModal(viaPopstate = false) {
     const modal = document.getElementById('templates_modal');
     if (modal) modal.classList.add('hidden');
+    if (!viaPopstate && isMobile) {
+        history.back();
+    }
 }
 
 function openAIModal() {
@@ -6965,12 +7048,18 @@ function openAIModal() {
     if (modal) {
         modal.classList.remove('hidden');
         document.getElementById('ai_prompt').focus();
+        if (isMobile) {
+            history.pushState({ modal: 'ai' }, '');
+        }
     }
 }
 
-function closeAIModal() {
+function closeAIModal(viaPopstate = false) {
     const modal = document.getElementById('ai_modal');
     if (modal) modal.classList.add('hidden');
+    if (!viaPopstate && isMobile) {
+        history.back();
+    }
 }
 
 function loadCustomTemplate(templateId) {
@@ -7168,18 +7257,34 @@ function renderDataTemplate(tpl) {
         spawnedObjects.push(spawned);
     });
     
-    // 5. Spawn connections
-    if (tpl.connections && Array.isArray(tpl.connections)) {
-        setTimeout(() => {
-            tpl.connections.forEach(conn => {
-                const fromNode = spawnedObjects[conn.from];
-                const toNode = spawnedObjects[conn.to];
-                if (fromNode && toNode) {
-                    connectNodesForTemplate(fromNode, toNode, conn.color || '#D4AF37');
-                }
-            });
-        }, 150);
     }
+
+    // 6. Spawn a premium, highly visible EDITABLE sample instruction text box
+    // so users immediately know exactly how to customize templates.
+    const sampleText = new fabric.Textbox("💡 Double-tap any text box to edit/customize!", {
+        left: targetW / 2,
+        top: targetH - 50,
+        originX: 'center',
+        originY: 'center',
+        fontSize: 14,
+        fontFamily: "'Montserrat', sans-serif",
+        fontWeight: 'bold',
+        fill: isDark ? '#D4AF37' : '#9a3412',
+        textAlign: 'center',
+        width: Math.min(500, targetW - 60),
+        borderColor: '#D4AF37',
+        editingBorderColor: '#D4AF37',
+        cornerColor: '#D4AF37',
+        cornerStyle: 'circle',
+        cornerSize: isMobile ? 24 : 12,
+        transparentCorners: false,
+        padding: 8,
+        backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.7)',
+        rx: 8,
+        ry: 8
+    });
+    canvas.add(sampleText);
+    canvas.setActiveObject(sampleText);
 }
 
 // Helpers to programmatically construct styled Fabric.js template elements
