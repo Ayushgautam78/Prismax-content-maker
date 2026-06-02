@@ -1981,6 +1981,10 @@ function addText(type = 'body', forceFont = null) {
     canvas.setActiveObject(text);
 
     canvas.requestRenderAll();
+
+    if (isMobile) {
+        closeMobileSheets();
+    }
 }
 
 function initFonts() {
