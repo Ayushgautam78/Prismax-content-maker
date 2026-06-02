@@ -1507,15 +1507,18 @@ function handleResize() {
     isMobile = newWidth < 768;
     window.isMobile = isMobile;
 
-    // KEYBOARD POPUP DETECTION (Mobile Only)
+    // KEYBOARD POPUP / ADDRESS BAR DETECTION (Mobile Only)
+    // If the width of the viewport hasn't changed, it is a vertical-only resize
+    // (caused by virtual keyboard opening/closing or browser address bar hiding/showing).
+    // In this case, we MUST preserve the user's custom zoom and pan, and avoid resetting the canvas.
     if (isMobile && newWidth === lastWidth) {
-        const heightDiff = Math.abs(newHeight - lastHeight);
-        if (heightDiff > 100) {
-            console.log("[Studio] Keyboard detect - preserving center alignment");
-            limitPan(); // Force realignment
+        console.log("[Studio] Vertical-only resize on mobile - preserving zoom and layout");
+        lastHeight = newHeight;
+        if (canvas) {
+            limitPan();
             canvas.requestRenderAll();
-            return;
         }
+        return;
     }
 
     lastWidth = newWidth;
