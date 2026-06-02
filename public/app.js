@@ -979,6 +979,9 @@ function startStudio(w, h, savedState = null) {
                     resizeCanvas(true);
                     saveHistory(); // Initial state
                 }
+                if (isMobile) {
+                    closeMobileSheets();
+                }
                 console.log('[startStudio] Init complete.');
             } catch (innerErr) {
                 console.error('[startStudio] Error during canvas init:', innerErr);
@@ -1755,6 +1758,8 @@ function addPlaceholderAsset(item) {
 }
 
 let uploadedAssets = [];
+let isUploadSelectMode = false;
+let selectedUploads = new Set();
 
 // Initialize Uploaded Assets from cache storage
 function initUploadedAssets() {
@@ -1769,6 +1774,107 @@ function initUploadedAssets() {
         console.error("Failed to load uploaded assets from localStorage cache:", err);
         uploadedAssets = [];
     }
+
+    // Wire up new action bar buttons
+    const uploadInput = document.getElementById('upload_my_asset_tab');
+    if (uploadInput) {
+        uploadInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+    }
+
+    const selectBtn = document.getElementById('btn_uploads_select_mode');
+    if (selectBtn) {
+        selectBtn.addEventListener('click', () => toggleUploadSelectMode(true));
+    }
+
+    const cancelBtn = document.getElementById('btn_uploads_cancel_select');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => toggleUploadSelectMode(false));
+    }
+
+    const deleteBtn = document.getElementById('btn_uploads_delete_selected');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', deleteSelectedUploadedAssets);
+    }
+
+    renderUploadedAssetsGrid();
+}
+
+function toggleUploadSelectMode(enable) {
+    isUploadSelectMode = enable;
+    if (!enable) {
+        selectedUploads.clear();
+    }
+    
+    // Toggle bar displays
+    const stdControls = document.getElementById('uploads_standard_controls');
+    const selControls = document.getElementById('uploads_select_controls');
+    const helperText = document.getElementById('uploads_helper_text');
+    
+    if (stdControls && selControls) {
+        if (enable) {
+            stdControls.classList.add('hidden');
+            selControls.classList.remove('hidden');
+            if (helperText) helperText.innerText = "Tap images to select, then click Delete.";
+        } else {
+            stdControls.classList.remove('hidden');
+            selControls.classList.add('hidden');
+            if (helperText) helperText.innerText = "Tip: Hold an image to select and delete custom uploads!";
+        }
+    }
+    
+    updateSelectedUploadsUI();
+    renderUploadedAssetsGrid();
+}
+
+function updateSelectedUploadsUI() {
+    const countEl = document.getElementById('uploads_selected_count');
+    if (countEl) {
+        countEl.innerText = `Selected: ${selectedUploads.size}`;
+    }
+    
+    // Enable/disable delete button based on selection size
+    const deleteBtn = document.getElementById('btn_uploads_delete_selected');
+    if (deleteBtn) {
+        if (selectedUploads.size > 0) {
+            deleteBtn.disabled = false;
+            deleteBtn.style.opacity = '1';
+        } else {
+            deleteBtn.disabled = true;
+            deleteBtn.style.opacity = '0.5';
+        }
+    }
+}
+
+function deleteSelectedUploadedAssets() {
+    if (selectedUploads.size === 0) return;
+    
+    const count = selectedUploads.size;
+    if (!confirm(`Are you sure you want to delete the ${count} selected custom asset(s) from cache memory?`)) return;
+    
+    uploadedAssets = uploadedAssets.filter(asset => !selectedUploads.has(asset.id));
+    
+    try {
+        localStorage.setItem('prismax_uploaded_assets', JSON.stringify(uploadedAssets));
+        showToast(`🗑️ ${count} asset(s) removed from cache.`);
+    } catch (err) {
+        console.error("Failed to update cache after bulk delete:", err);
+    }
+    
+    toggleUploadSelectMode(false);
+}
+
+function toggleItemSelection(id, itemEl) {
+    if (selectedUploads.has(id)) {
+        selectedUploads.delete(id);
+    } else {
+        selectedUploads.add(id);
+    }
+    
+    updateSelectedUploadsUI();
     renderUploadedAssetsGrid();
 }
 
@@ -1795,50 +1901,109 @@ function renderUploadedAssetsGrid() {
         item.style.backgroundSize = 'contain';
         item.style.backgroundRepeat = 'no-repeat';
         item.style.backgroundPosition = 'center';
-        
+        item.style.position = 'relative';
+
         // Label for name
         const label = document.createElement('span');
         label.innerText = asset.name || 'Custom Asset';
         item.appendChild(label);
 
-        // Delete button overlay
-        const delBtn = document.createElement('button');
-        delBtn.className = 'delete-asset-btn';
-        delBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
-        delBtn.title = 'Delete asset from cache';
-        delBtn.onclick = (e) => {
-            e.stopPropagation(); // Prevent adding to canvas
-            deleteUploadedAsset(asset.id);
-        };
-        item.appendChild(delBtn);
+        // Highlight and Checkmark overlay if in Select Mode and selected
+        const isSelected = selectedUploads.has(asset.id);
+        if (isUploadSelectMode) {
+            item.classList.toggle('selected-asset', isSelected);
+            
+            // Add a visual checkmark badge
+            const badge = document.createElement('div');
+            badge.style.position = 'absolute';
+            badge.style.top = '6px';
+            badge.style.right = '6px';
+            badge.style.width = '20px';
+            badge.style.height = '20px';
+            badge.style.borderRadius = '50%';
+            badge.style.background = isSelected ? 'var(--primary-gold)' : 'rgba(0,0,0,0.5)';
+            badge.style.border = '1px solid #fff';
+            badge.style.display = 'flex';
+            badge.style.alignItems = 'center';
+            badge.style.justifyContent = 'center';
+            badge.style.color = '#000';
+            badge.style.fontSize = '0.65rem';
+            badge.style.zIndex = '10';
+            badge.innerHTML = isSelected ? '<i class="fa-solid fa-check"></i>' : '';
+            item.appendChild(badge);
+        }
 
-        // Add to canvas on click
-        item.onclick = (e) => {
-            if (e.target.closest('.delete-asset-btn')) return;
-            fabric.Image.fromURL(asset.src, (img) => {
-                img.scaleToWidth(virtualFormat.w * 0.4);
-                img.set({
-                    left: virtualFormat.w / 2 - (img.getScaledWidth() / 2),
-                    top: virtualFormat.h / 2 - (img.getScaledHeight() / 2),
-                    uploadedAssetId: asset.id // Link to cache!
-                });
-                canvas.add(img);
-                canvas.setActiveObject(img);
-                saveHistory();
-            }, { crossOrigin: 'anonymous' });
+        // --- LONG PRESS & TAP HANDLERS ---
+        let pressTimer = null;
+        let isLongPress = false;
+        
+        const startPress = () => {
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                // Enter select mode if not already, and toggle this item
+                if (!isUploadSelectMode) {
+                    toggleUploadSelectMode(true);
+                }
+                toggleItemSelection(asset.id, item);
+                if (navigator.vibrate) {
+                    navigator.vibrate(40);
+                }
+            }, 600);
         };
+        
+        const endPress = () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+        };
+
+        const handleTap = (e) => {
+            if (isLongPress) {
+                isLongPress = false;
+                return;
+            }
+            
+            if (isUploadSelectMode) {
+                toggleItemSelection(asset.id, item);
+            } else {
+                // Add to canvas normally
+                fabric.Image.fromURL(asset.src, (img) => {
+                    img.scaleToWidth(virtualFormat.w * 0.4);
+                    img.set({
+                        left: virtualFormat.w / 2 - (img.getScaledWidth() / 2),
+                        top: virtualFormat.h / 2 - (img.getScaledHeight() / 2),
+                        uploadedAssetId: asset.id
+                    });
+                    canvas.add(img);
+                    canvas.setActiveObject(img);
+                    saveHistory();
+                }, { crossOrigin: 'anonymous' });
+            }
+        };
+
+        // Wire up touch events for mobile
+        item.addEventListener('touchstart', startPress, { passive: true });
+        item.addEventListener('touchend', endPress, { passive: true });
+        item.addEventListener('touchmove', endPress, { passive: true });
+        
+        // Wire up mouse events for desktop compatibility
+        item.addEventListener('mousedown', startPress);
+        item.addEventListener('mouseup', endPress);
+        item.addEventListener('mouseleave', endPress);
+        
+        // Tap/click handler
+        item.addEventListener('click', handleTap);
 
         grid.appendChild(item);
     });
 }
 
-// Delete uploaded asset from array and update local cache
 function deleteUploadedAsset(id) {
-    if (!confirm("Are you sure you want to delete this custom asset from cache memory?")) return;
     uploadedAssets = uploadedAssets.filter(asset => asset.id !== id);
     try {
         localStorage.setItem('prismax_uploaded_assets', JSON.stringify(uploadedAssets));
-        showToast("Asset removed from local cache. 🗑️");
     } catch (err) {
         console.error("Failed to update cache after delete:", err);
     }

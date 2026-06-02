@@ -170,7 +170,34 @@
 
                     <!-- My Uploads -->
                     <div id="assets_my" class="sub-panel custom-scrollbar" style="max-height: calc(100vh - 350px); overflow-y: auto;">
-                        <p class="helper-text" style="font-size:0.8rem; opacity:0.7; text-align:center;">Your custom uploaded images will automatically appear here!</p>
+                        <!-- Uploads Actions Top Bar -->
+                        <div id="uploads_actions_bar" class="mb-15" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            <!-- Standard Mode Controls -->
+                            <div id="uploads_standard_controls" style="display:flex; gap:8px; width:100%;">
+                                <label class="gold-btn" style="flex: 1; display:flex; justify-content:center; align-items:center; gap:6px; cursor:pointer; font-family:'Montserrat',sans-serif; font-size:0.8rem; padding:10px; margin:0; border-radius:8px;">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+                                    <input type="file" id="upload_my_asset_tab" accept="image/png, image/jpeg, image/svg+xml" hidden>
+                                </label>
+                                <button id="btn_uploads_select_mode" class="gold-btn outline" style="width:auto; padding:10px 12px; margin:0; border-radius:8px;" title="Select items to delete">
+                                    <i class="fa-solid fa-square-check"></i> Select
+                                </button>
+                            </div>
+                            
+                            <!-- Selection Mode Controls (Hidden by default) -->
+                            <div id="uploads_select_controls" class="hidden" style="display:flex; justify-content:space-between; align-items:center; width:100%; background:rgba(212,175,55,0.08); border:1px dashed var(--border-gold); padding:8px 12px; border-radius:8px;">
+                                <span id="uploads_selected_count" style="font-family:'Montserrat',sans-serif; font-size:0.8rem; color:var(--primary-gold); font-weight:bold;">Selected: 0</span>
+                                <div style="display:flex; gap:8px;">
+                                    <button id="btn_uploads_delete_selected" class="gold-btn" style="background:#dc2626; border-color:#dc2626; color:#fff; width:auto; padding:6px 12px; margin:0; border-radius:6px; font-size:0.8rem;" title="Delete selected items">
+                                        <i class="fa-solid fa-trash-can"></i> Delete
+                                    </button>
+                                    <button id="btn_uploads_cancel_select" class="gold-btn outline" style="width:auto; padding:6px 12px; margin:0; border-radius:6px; font-size:0.8rem;">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="helper-text" id="uploads_helper_text" style="font-size:0.75rem; opacity:0.6; text-align:center;">Tip: Hold an image to select and delete custom uploads!</p>
                         <div id="my_assets_grid" class="asset-grid mt-10"></div>
                     </div>
 

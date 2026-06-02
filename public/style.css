@@ -2070,3 +2070,36 @@ input[type="range"] {
     background: #ff3344 !important;
     transform: scale(1.12) !important;
 }
+
+/* Selected Asset Item highlight styling */
+.asset-item.selected-asset {
+    border-color: var(--primary-gold) !important;
+    background-color: rgba(212, 175, 55, 0.28) !important;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5) !important;
+    transform: scale(0.96) !important;
+}
+
+/* Horizontally Scrollable/Swipable Top tab subnav bar on Mobile Devices */
+@media (max-width: 767px) {
+    .tab-subnav {
+        display: flex !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        margin-bottom: 15px !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+    }
+    .tab-subnav::-webkit-scrollbar {
+        display: none !important; /* Premium PicsArt look: hide scrollbar */
+    }
+    .sub-tab {
+        flex: 0 0 auto !important;
+        padding: 8px 18px !important;
+        font-size: 0.82rem !important;
+        border-bottom: 2px solid transparent !important;
+    }
+    .sub-tab.active {
+        border-bottom-color: var(--primary-gold) !important;
+    }
+}
