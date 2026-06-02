@@ -7321,7 +7321,6 @@ function renderDataTemplate(tpl) {
         spawnedObjects.push(spawned);
     });
     
-    }
 
     // 6. Spawn a premium, highly visible EDITABLE sample instruction text box
     // so users immediately know exactly how to customize templates.
