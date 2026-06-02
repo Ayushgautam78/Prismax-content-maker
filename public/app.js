@@ -304,17 +304,6 @@ const switchTab = (targetId, tabName) => {
             // Properties sheet
             document.getElementById('right_sidebar').classList.add('sheet-open');
             document.getElementById('left_sidebar').classList.remove('sheet-open');
-
-            // Virtual keyboard trigger when editing text from floating bar Edit button
-            const sel = canvas ? canvas.getActiveObject() : null;
-            if (sel && (sel.type === 'textbox' || sel.type === 'i-text' || sel.type === 'text')) {
-                setTimeout(() => {
-                    sel.enterEditing();
-                    if (sel.hiddenTextarea) {
-                        sel.hiddenTextarea.focus();
-                    }
-                }, 100);
-            }
         } else {
             document.getElementById('right_sidebar').classList.remove('sheet-open');
             document.getElementById('left_sidebar').classList.add('sheet-open');
