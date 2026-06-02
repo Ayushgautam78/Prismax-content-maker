@@ -1273,9 +1273,23 @@ function initFabric() {
 
     canvas.on('text:editing:exited', (e) => {
         let a = e.target;
+        if (a) {
+            a.editable = false;
+        }
         if (a && a.text !== a._originalTextBeforeEdit) {
             saveHistory();
             updateLayersPanel();
+        }
+    });
+
+    canvas.on('mouse:dblclick', (options) => {
+        const active = options.target;
+        if (active && isTextObject(active)) {
+            active.editable = true;
+            active.enterEditing();
+            if (active.hiddenTextarea) {
+                active.hiddenTextarea.focus();
+            }
         }
     });
 
@@ -1974,13 +1988,15 @@ function addText(type = 'body', forceFont = null) {
         fill: getContrastColor(),
         fontSize: fontSize,
         fontWeight: fontWeight,
-        textAlign: 'center'
+        textAlign: 'center',
+        editable: false
     });
     text.id = 'obj_' + Date.now();
     canvas.add(text);
     canvas.setActiveObject(text);
 
     // Enter editing mode and select all text automatically
+    text.editable = true;
     text.enterEditing();
     text.selectAll();
     canvas.requestRenderAll();
@@ -5379,7 +5395,8 @@ async function renderInfographic(data) {
                 fontWeight: el.fontWeight || 'normal',
                 fill: el.textColor || '#ffffff',
                 textAlign: 'center',
-                width: width
+                width: width,
+                editable: false
             });
             textObj.id = el.id || ('text_' + Date.now() + Math.random());
             canvas.add(textObj);
@@ -5515,7 +5532,8 @@ async function renderInfographic(data) {
                     fill: el.textColor || '#ffffff',
                     textAlign: 'center',
                     width: width - 20,
-                    splitByGrapheme: false
+                    splitByGrapheme: false,
+                    editable: false
                 });
                 titleText.id = 'text_' + Date.now() + '_' + Math.random();
                 canvas.add(titleText);
@@ -5532,7 +5550,8 @@ async function renderInfographic(data) {
                         textAlign: 'center',
                         width: width - 20,
                         opacity: 0.8,
-                        splitByGrapheme: false
+                        splitByGrapheme: false,
+                        editable: false
                     });
                     descText.id = 'text_' + Date.now() + '_' + Math.random();
                     canvas.add(descText);
@@ -7347,7 +7366,8 @@ function renderDataTemplate(tpl) {
         padding: 8,
         backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.7)',
         rx: 8,
-        ry: 8
+        ry: 8,
+        editable: false
     });
     canvas.add(sampleText);
     canvas.setActiveObject(sampleText);
@@ -7374,7 +7394,8 @@ function createTextForTemplate(textStr, x, y, options = {}) {
             offsetX: 2,
             offsetY: 2
         }) : null,
-        id: 'text_' + Date.now() + Math.random()
+        id: 'text_' + Date.now() + Math.random(),
+        editable: false
     });
     canvas.add(text);
     return text;
