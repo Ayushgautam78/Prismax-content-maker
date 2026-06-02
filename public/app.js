@@ -383,6 +383,7 @@ function initMobileBottomNav() {
             const tabNames = {
                 panel_templates: 'Templates',
                 panel_assets: 'Assets',
+                panel_uploads: 'Uploads',
                 panel_text: 'Text',
                 panel_shapes: 'Shapes',
                 panel_frames: 'Frames',
@@ -469,7 +470,7 @@ function initQuickToolbar() {
         { name: 'Logo', target: 'grid_logos' },
         { name: 'Stickers', target: 'grid_stickers' },
         { name: 'Elements', target: 'grid_elements' },
-        { name: 'Uploads', target: 'assets_my' }
+        { name: 'Uploads', target: 'panel_uploads' }
     ];
 
     subOptions.forEach(opt => {
@@ -479,11 +480,8 @@ function initQuickToolbar() {
         btn.onclick = () => {
             if (opt.target === 'panel_bg') {
                 switchTab('panel_bg', 'Background');
-            } else if (opt.target === 'assets_my') {
-                switchTab('panel_assets', 'Assets');
-                // Switch to Uploads sub-tab in panel
-                const uploadsTabBtn = document.querySelector('.sub-tab[data-sub="assets_my"]');
-                if (uploadsTabBtn) uploadsTabBtn.click();
+            } else if (opt.target === 'panel_uploads') {
+                switchTab('panel_uploads', 'Uploads');
             } else {
                 switchTab('panel_assets', 'Assets');
                 // Switch to Official sub-tab in panel

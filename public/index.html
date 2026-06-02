@@ -83,6 +83,7 @@
                     Theme</button>
                 <button class="nav-tab" data-target="panel_templates"><i class="fa-solid fa-palette"></i> Templates</button>
                 <button class="nav-tab" data-target="panel_assets"><i class="fa-solid fa-gem"></i> Assets</button>
+                <button class="nav-tab" data-target="panel_uploads"><i class="fa-solid fa-cloud-arrow-up"></i> Uploads</button>
                 <button class="nav-tab" data-target="panel_text"><i class="fa-solid fa-font"></i> Text</button>
                 <button class="nav-tab" data-target="panel_bg"><i class="fa-solid fa-fill-drip"></i> Background</button>
                 <button class="nav-tab active" data-target="panel_shapes"><i class="fa-solid fa-shapes"></i> Shapes</button>
@@ -126,7 +127,6 @@
 
                     <div class="tab-subnav">
                         <button class="sub-tab active" data-sub="assets_off">Official</button>
-                        <button class="sub-tab" data-sub="assets_my">Uploads</button>
                         <button class="sub-tab" data-sub="assets_web">Search</button>
                     </div>
 
@@ -168,8 +168,39 @@
                         <div id="grid_elements" class="asset-grid"></div>
                     </div>
 
-                    <!-- My Uploads -->
-                    <div id="assets_my" class="sub-panel custom-scrollbar" style="max-height: calc(100vh - 350px); overflow-y: auto;">
+                    <!-- Web Search -->
+                    <div id="assets_web" class="sub-panel">
+                        <div class="search-container mb-15">
+                            <div style="display:flex; gap:10px; margin-bottom:8px;">
+                                <select id="asset_search_source"
+                                    style="background:var(--bg-dark); color:var(--primary-gold); border:1px solid var(--border-gold); border-radius:8px; padding:5px 10px; font-size:0.75rem; width: 100%;">
+                                    <option value="pixabay">Pixabay (Photos)</option>
+                                    <option value="openverse">Openverse (Free CC)</option>
+                                    <option value="icons">Iconify (SVG Icons)</option>
+                                </select>
+                            </div>
+                            <div style="position:relative;">
+                                <input type="text" id="asset_search_input" placeholder="Search the web..."
+                                    style="width:100%; padding:12px 40px 12px 15px; background:rgba(255,255,255,0.05); border:1px solid var(--border-gold); border-radius:8px; color:#fff; font-size:0.9rem;">
+                                <i class="fa-solid fa-magnifying-glass"
+                                    style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:var(--primary-gold); cursor:pointer;"
+                                    id="btn_do_search"></i>
+                            </div>
+                        </div>
+                        <div id="grid_search_results" class="asset-grid custom-scrollbar"
+                            style="max-height: calc(100vh - 450px); overflow-y: auto;">
+                            <div style="text-align:center; padding:40px; opacity:0.3; font-size:0.8rem;">Enter keywords
+                                to find thousands of assets</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Uploads Panel -->
+                <div id="panel_uploads" class="panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom: 1px solid var(--border-gold); padding-bottom: 5px;">
+                        <h3 style="margin:0; border:none;">Uploads</h3>
+                    </div>
+                    <div class="custom-scrollbar" style="max-height: calc(100vh - 190px); overflow-y: auto; padding-right: 2px;">
                         <!-- Uploads Actions Top Bar -->
                         <div id="uploads_actions_bar" class="mb-15" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
                             <!-- Standard Mode Controls -->
@@ -199,32 +230,6 @@
                         
                         <p class="helper-text" id="uploads_helper_text" style="font-size:0.75rem; opacity:0.6; text-align:center;">Tip: Hold an image to select and delete custom uploads!</p>
                         <div id="my_assets_grid" class="asset-grid mt-10"></div>
-                    </div>
-
-                    <!-- Web Search -->
-                    <div id="assets_web" class="sub-panel">
-                        <div class="search-container mb-15">
-                            <div style="display:flex; gap:10px; margin-bottom:8px;">
-                                <select id="asset_search_source"
-                                    style="background:var(--bg-dark); color:var(--primary-gold); border:1px solid var(--border-gold); border-radius:8px; padding:5px 10px; font-size:0.75rem; width: 100%;">
-                                    <option value="pixabay">Pixabay (Photos)</option>
-                                    <option value="openverse">Openverse (Free CC)</option>
-                                    <option value="icons">Iconify (SVG Icons)</option>
-                                </select>
-                            </div>
-                            <div style="position:relative;">
-                                <input type="text" id="asset_search_input" placeholder="Search the web..."
-                                    style="width:100%; padding:12px 40px 12px 15px; background:rgba(255,255,255,0.05); border:1px solid var(--border-gold); border-radius:8px; color:#fff; font-size:0.9rem;">
-                                <i class="fa-solid fa-magnifying-glass"
-                                    style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:var(--primary-gold); cursor:pointer;"
-                                    id="btn_do_search"></i>
-                            </div>
-                        </div>
-                        <div id="grid_search_results" class="asset-grid custom-scrollbar"
-                            style="max-height: calc(100vh - 450px); overflow-y: auto;">
-                            <div style="text-align:center; padding:40px; opacity:0.3; font-size:0.8rem;">Enter keywords
-                                to find thousands of assets</div>
-                        </div>
                     </div>
                 </div>
                 
@@ -539,6 +544,7 @@
                     Theme</button>
                 <button class="nav-tab" data-target="panel_templates"><i class="fa-solid fa-palette"></i> Templates</button>
                 <button class="nav-tab" data-target="panel_assets"><i class="fa-solid fa-gem"></i> Assets</button>
+                <button class="nav-tab" data-target="panel_uploads"><i class="fa-solid fa-cloud-arrow-up"></i> Uploads</button>
                 <button class="nav-tab" data-target="panel_text"><i class="fa-solid fa-font"></i> Text</button>
                 <button class="nav-tab active" data-target="panel_shapes"><i class="fa-solid fa-shapes"></i> Shapes</button>
                 <button class="nav-tab" data-target="panel_frames"><i class="fa-solid fa-border-all"></i> Frames</button>
@@ -645,6 +651,10 @@
             <button class="mob-nav-btn" data-mob-target="panel_assets" id="mob_btn_assets">
                 <i class="fa-solid fa-gem"></i>
                 Assets
+            </button>
+            <button class="mob-nav-btn" data-mob-target="panel_uploads" id="mob_btn_uploads">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                Uploads
             </button>
             <button class="mob-nav-btn" data-mob-target="panel_text" id="mob_btn_text">
                 <i class="fa-solid fa-font"></i>
