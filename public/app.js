@@ -46,13 +46,26 @@ const PRESET_GRAD_BGS = [
 
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Critical Startup Modal Listeners (Must be first!)
+    let _ratioFiring = false; // debounce guard for touch+click double-fire
     const ratioHandler = (btn) => {
+        if (_ratioFiring) return;
+        _ratioFiring = true;
+        setTimeout(() => { _ratioFiring = false; }, 400);
+
         if (typeof canvas !== 'undefined' && canvas && canvas.getObjects().length > 0) {
             if (!confirm("Changing the canvas ratio will resize your workspace and may affect your layout. Proceed?")) return;
         }
         const w = parseInt(btn.dataset.width);
         const h = parseInt(btn.dataset.height);
-        startStudio(w, h);
+        console.log('[Startup] Ratio selected:', w, 'x', h);
+        try {
+            startStudio(w, h);
+        } catch (err) {
+            console.error('[Startup] startStudio crashed:', err);
+            // Emergency fallback: unhide app anyway
+            document.getElementById('startup_modal')?.classList.add('hidden');
+            document.getElementById('app')?.classList.remove('hidden');
+        }
     };
 
     document.querySelectorAll('.ratio-btn').forEach(btn => {
@@ -73,15 +86,16 @@ document.addEventListener("DOMContentLoaded", () => {
         startStudio(w, h);
     });
 
-    // 2. Secondary UI Initialization
-    initPickers();
-    initUI();
-    initFonts();
-    initBgPalettes();
-    loadAssets();
-    initUploadedAssets();
-    initAIControls();
-    initMobileBottomNav();
+    // 2. Secondary UI Initialization — each wrapped so one failure doesn't block others
+    const _safeInit = (name, fn) => { try { fn(); } catch(e) { console.error(`[Init] ${name} failed:`, e); } };
+    _safeInit('initPickers', initPickers);
+    _safeInit('initUI', initUI);
+    _safeInit('initFonts', initFonts);
+    _safeInit('initBgPalettes', initBgPalettes);
+    _safeInit('loadAssets', loadAssets);
+    _safeInit('initUploadedAssets', initUploadedAssets);
+    _safeInit('initAIControls', initAIControls);
+    _safeInit('initMobileBottomNav', initMobileBottomNav);
 
     // Initialize base history state on mobile startup for back button interception
     if (isMobile) {
@@ -252,12 +266,20 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function checkSavedDesign() {
-    const saved = localStorage.getItem('prismax_design_v2') || localStorage.getItem('prismax_design');
-    const ratio = localStorage.getItem('prismax_ratio');
-    if (saved && ratio) {
-        console.log("[Studio] Recovering saved project from memory...");
-        const r = JSON.parse(ratio);
-        startStudio(r.w, r.h, saved);
+    try {
+        const saved = localStorage.getItem('prismax_design_v2') || localStorage.getItem('prismax_design');
+        const ratio = localStorage.getItem('prismax_ratio');
+        if (saved && ratio) {
+            console.log("[Studio] Recovering saved project from memory...");
+            const r = JSON.parse(ratio);
+            startStudio(r.w, r.h, saved);
+        }
+    } catch (err) {
+        console.error('[checkSavedDesign] Recovery failed:', err);
+        // Clear corrupted state so user isn't stuck forever
+        localStorage.removeItem('prismax_design_v2');
+        localStorage.removeItem('prismax_design');
+        localStorage.removeItem('prismax_ratio');
     }
 }
 
@@ -760,21 +782,21 @@ function initUI() {
     document.getElementById('btn_reset_studio')?.addEventListener('click', resetStudio);
 
     // Layers & History
-    document.getElementById('btn_undo').addEventListener('click', undo);
-    document.getElementById('btn_redo').addEventListener('click', redo);
+    document.getElementById('btn_undo')?.addEventListener('click', undo);
+    document.getElementById('btn_redo')?.addEventListener('click', redo);
     document.getElementById('btn_bring_front')?.addEventListener('click', () => bringLayer('front'));
     document.getElementById('btn_send_back')?.addEventListener('click', () => bringLayer('back'));
     document.getElementById('btn_prop_bring_front')?.addEventListener('click', () => bringLayer('front'));
     document.getElementById('btn_prop_send_back')?.addEventListener('click', () => bringLayer('back'));
-    document.getElementById('btn_delete').addEventListener('click', deleteSelected);
+    document.getElementById('btn_delete')?.addEventListener('click', deleteSelected);
     document.getElementById('btn_duplicate')?.addEventListener('click', duplicateSelected);
 
-    document.getElementById('btn_group').addEventListener('click', toggleGroup);
+    document.getElementById('btn_group')?.addEventListener('click', toggleGroup);
     document.getElementById('btn_save_progress')?.addEventListener('click', mergeAllLayers);
     document.getElementById('btn_play_anim')?.addEventListener('click', playIntroAnimation);
 
     // Arrow tool init
-    document.getElementById('btn_add_arrow').addEventListener('click', function () {
+    document.getElementById('btn_add_arrow')?.addEventListener('click', function () {
         isArrowMode = !isArrowMode;
         showToast(isArrowMode ? "Arrow Mode: Tap two elements to connect" : "Arrow Mode Disabled");
         if (isArrowMode) {
@@ -927,39 +949,62 @@ function initUI() {
 }
 
 function startStudio(w, h, savedState = null) {
-    virtualFormat.w = w;
-    virtualFormat.h = h;
-    localStorage.setItem('prismax_ratio', JSON.stringify(virtualFormat));
+    try {
+        console.log('[startStudio] Starting with', w, 'x', h);
+        virtualFormat.w = w;
+        virtualFormat.h = h;
+        localStorage.setItem('prismax_ratio', JSON.stringify(virtualFormat));
 
-    document.getElementById('startup_modal').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
+        document.getElementById('startup_modal').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
 
-    if (!canvas) {
-        initFabric();
-    }
-
-    if (savedState) {
-        isHistoryAction = true;
-        try {
-            const parsed = JSON.parse(savedState);
-            if (parsed && parsed.canvas) {
-                loadHistory(savedState);
-                return;
-            }
-        } catch (e) {
-            // Not structured v2 state, fallback to direct JSON load
+        if (!canvas) {
+            initFabric();
         }
-        
-        canvas.loadFromJSON(savedState, () => {
-            resizeCanvas(false);
-            isHistoryAction = false;
-            canvas.requestRenderAll();
-            updateLayersPanel();
-            showToast("Project Recovered! ✨");
+
+        // Use requestAnimationFrame to ensure the browser has computed layout
+        // after unhiding the #app container. Without this, workspace dimensions
+        // may be 0 on mobile, causing resizeCanvas to bail out.
+        const finishInit = () => {
+            try {
+                if (savedState) {
+                    isHistoryAction = true;
+                    try {
+                        const parsed = JSON.parse(savedState);
+                        if (parsed && parsed.canvas) {
+                            loadHistory(savedState);
+                            return;
+                        }
+                    } catch (e) {
+                        // Not structured v2 state, fallback to direct JSON load
+                    }
+                    
+                    canvas.loadFromJSON(savedState, () => {
+                        resizeCanvas(false);
+                        isHistoryAction = false;
+                        canvas.requestRenderAll();
+                        updateLayersPanel();
+                        showToast("Project Recovered! ✨");
+                    });
+                } else {
+                    resizeCanvas(true);
+                    saveHistory(); // Initial state
+                }
+                console.log('[startStudio] Init complete.');
+            } catch (innerErr) {
+                console.error('[startStudio] Error during canvas init:', innerErr);
+            }
+        };
+
+        // Double-RAF ensures layout is fully computed even on slow mobile browsers
+        requestAnimationFrame(() => {
+            requestAnimationFrame(finishInit);
         });
-    } else {
-        resizeCanvas(true);
-        saveHistory(); // Initial state
+    } catch (err) {
+        console.error('[startStudio] FATAL:', err);
+        // Emergency: still unhide app so user is not stuck
+        document.getElementById('startup_modal')?.classList.add('hidden');
+        document.getElementById('app')?.classList.remove('hidden');
     }
 }
 
