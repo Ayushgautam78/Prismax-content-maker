@@ -46,6 +46,38 @@ const PRESET_GRAD_BGS = [
 
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Critical Startup Modal Listeners (Must be first!)
+    const btnNewCanvasTab = document.getElementById('btn_new_canvas_tab');
+    const btnSavedProjectsTab = document.getElementById('btn_saved_projects_tab');
+    const sectionNewCanvas = document.getElementById('section_new_canvas');
+    const sectionSavedProjects = document.getElementById('section_saved_projects');
+
+    if (btnNewCanvasTab && btnSavedProjectsTab) {
+        btnNewCanvasTab.addEventListener('click', (e) => {
+            e.preventDefault();
+            btnNewCanvasTab.classList.add('active');
+            btnSavedProjectsTab.classList.remove('active');
+            if (sectionNewCanvas) sectionNewCanvas.style.display = 'block';
+            if (sectionSavedProjects) sectionSavedProjects.style.display = 'none';
+        });
+
+        btnSavedProjectsTab.addEventListener('click', (e) => {
+            e.preventDefault();
+            btnSavedProjectsTab.classList.add('active');
+            btnNewCanvasTab.classList.remove('active');
+            if (sectionNewCanvas) sectionNewCanvas.style.display = 'none';
+            if (sectionSavedProjects) {
+                sectionSavedProjects.style.display = 'block';
+                renderSavedProjectsGrid();
+            }
+        });
+    }
+
+    try {
+        updateSavedProjectsCount();
+    } catch(e) {
+        console.error(e);
+    }
+
     let _ratioFiring = false; // debounce guard for touch+click double-fire
     const ratioHandler = (btn) => {
         if (_ratioFiring) return;
@@ -779,7 +811,7 @@ function initUI() {
     document.getElementById('btn_duplicate')?.addEventListener('click', duplicateSelected);
 
     document.getElementById('btn_group')?.addEventListener('click', toggleGroup);
-    document.getElementById('btn_save_progress')?.addEventListener('click', mergeAllLayers);
+    document.getElementById('btn_save_progress')?.addEventListener('click', triggerSaveProjectFlow);
     document.getElementById('btn_play_anim')?.addEventListener('click', playIntroAnimation);
 
     // Arrow tool init
@@ -7711,4 +7743,263 @@ function connectNodesForTemplate(fromNode, toNode, color = '#D4AF37') {
 function buildTemplateLayout(templateId) {
     // Keep backwards compatibility or manual invocation if needed, but everything is handled by data-driven renderDataTemplate now!
 }
+
+/* ── SAVED PROJECTS CACHE MEMORY CORE ── */
+
+function updateSavedProjectsCount() {
+    try {
+        const saved = localStorage.getItem('prismax_saved_projects');
+        const projects = saved ? JSON.parse(saved) : [];
+        const countSpan = document.getElementById('saved_projects_count');
+        if (countSpan) {
+            countSpan.textContent = projects.length;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function triggerSaveProjectFlow() {
+    const dateStr = new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const defaultName = `My Design - ${dateStr}`;
+    const name = prompt("Enter a name to save this project to cache memory:", defaultName);
+    if (name === null) return; // user cancelled
+    if (!name.trim()) {
+        showToast("Project name cannot be empty!", true);
+        return;
+    }
+    saveProject(name);
+}
+
+function saveProject(name) {
+    if (!name || !name.trim()) return;
+    
+    // 1. Serialize the current state
+    const canvasJSON = canvas.toJSON([
+        'id', 'selectable', 'evented', 'locked', 'objectCaching', 
+        'originalShapeType', 'connId', 'isArrowLine', 'isArrowHead', 
+        'isControlPoint', 'isArrowAnchor', 'customCornerRadius', 'wobbly',
+        'customAnimStyle', 'customAnimDelay', 'isFrame', 'frameShapeType', 'frameImageSrc', 'frameWidth', 'frameHeight',
+        'uploadedAssetId'
+    ]);
+
+    // Strip huge Base64 strings from saved JSON states to prevent localStorage QuotaExceededError
+    if (canvasJSON.objects) {
+        canvasJSON.objects.forEach(obj => {
+            if (obj.uploadedAssetId && obj.type === 'image') {
+                obj.src = '';
+            }
+        });
+    }
+
+    const state = {
+        canvas: canvasJSON,
+        connections: connections.map(c => ({
+            fromId: c.fromId,
+            toId: c.toId,
+            lineId: c.lineId,
+            color: c.color,
+            cpOffsetX: c.cpOffsetX,
+            cpOffsetY: c.cpOffsetY
+        })),
+        ratio: { w: virtualFormat.w, h: virtualFormat.h }
+    };
+
+    const stateStr = JSON.stringify(state);
+    
+    // Generate a tiny low-quality thumbnail for beautiful preview cards!
+    let previewData = '';
+    try {
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        
+        // Scale down to max 200px width/height to keep size extremely tiny
+        const scale = Math.min(200 / canvas.width, 200 / canvas.height);
+        previewData = canvas.toDataURL({
+            format: 'jpeg',
+            quality: 0.35,
+            multiplier: scale
+        });
+    } catch (e) {
+        console.warn('[saveProject] Failed to generate thumbnail:', e);
+    }
+    
+    // Get existing saved projects
+    let projects = [];
+    try {
+        const saved = localStorage.getItem('prismax_saved_projects');
+        if (saved) projects = JSON.parse(saved);
+    } catch (err) {
+        console.error(err);
+    }
+    
+    // Check if project with name already exists
+    const existingIndex = projects.findIndex(p => p.name.toLowerCase() === name.trim().toLowerCase());
+    const projectObj = {
+        id: existingIndex >= 0 ? projects[existingIndex].id : 'proj_' + Date.now(),
+        name: name.trim(),
+        timestamp: Date.now(),
+        ratio: { w: virtualFormat.w, h: virtualFormat.h },
+        state: stateStr,
+        preview: previewData
+    };
+    
+    if (existingIndex >= 0) {
+        projects[existingIndex] = projectObj;
+    } else {
+        projects.unshift(projectObj);
+    }
+    
+    try {
+        localStorage.setItem('prismax_saved_projects', JSON.stringify(projects));
+        showToast(`Project "${name.trim()}" saved successfully! ✨`);
+        updateSavedProjectsCount();
+    } catch (err) {
+        console.error(err);
+        if (err.name === 'QuotaExceededError') {
+            // Fallback: save without preview thumbnail to save space
+            projectObj.preview = '';
+            projects[existingIndex >= 0 ? existingIndex : 0] = projectObj;
+            try {
+                localStorage.setItem('prismax_saved_projects', JSON.stringify(projects));
+                showToast(`Project saved (without preview: storage limit)`);
+                updateSavedProjectsCount();
+            } catch (err2) {
+                showToast(`Storage Full! Please delete older projects first.`, true);
+            }
+        } else {
+            showToast('Failed to save project', true);
+        }
+    }
+}
+
+function renderSavedProjectsGrid() {
+    const grid = document.getElementById('saved_projects_grid');
+    const emptyState = document.getElementById('saved_projects_empty');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    
+    let projects = [];
+    try {
+        const saved = localStorage.getItem('prismax_saved_projects');
+        if (saved) projects = JSON.parse(saved);
+    } catch (e) {
+        console.error(e);
+    }
+    
+    if (projects.length === 0) {
+        grid.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    
+    grid.style.display = 'grid';
+    if (emptyState) emptyState.style.display = 'none';
+    
+    projects.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        
+        // Thumbnail content
+        let thumbnailHTML = '';
+        if (p.preview) {
+            thumbnailHTML = `<img src="${p.preview}" alt="${p.name}">`;
+        } else {
+            thumbnailHTML = `<div class="project-thumbnail-placeholder">${p.ratio.w} x ${p.ratio.h}</div>`;
+        }
+        
+        // Date formatting
+        const d = new Date(p.timestamp);
+        const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        card.innerHTML = `
+            <div class="project-thumbnail">
+                ${thumbnailHTML}
+                <div class="project-card-overlay">
+                    <button class="project-overlay-btn load" title="Load Project" onclick="loadSavedProject('${p.id}')">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </button>
+                    <button class="project-overlay-btn delete" title="Delete Project" onclick="event.stopPropagation(); deleteSavedProject('${p.id}')">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="project-info">
+                <div class="project-name" title="${p.name}">${p.name}</div>
+                <div class="project-meta">
+                    <span>${p.ratio.w}:${p.ratio.h}</span>
+                    <span>${dateStr}</span>
+                </div>
+            </div>
+        `;
+        
+        // Click on thumbnail/card loads project (excluding trash button)
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.delete')) return;
+            loadSavedProject(p.id);
+        });
+        
+        grid.appendChild(card);
+    });
+}
+
+function loadSavedProject(projectId) {
+    try {
+        const saved = localStorage.getItem('prismax_saved_projects');
+        if (!saved) return;
+        const projects = JSON.parse(saved);
+        const p = projects.find(proj => proj.id === projectId);
+        if (!p) {
+            showToast('Project not found!', true);
+            return;
+        }
+        
+        console.log(`[Dashboard] Loading saved project "${p.name}"`);
+        
+        // Save to recovery key so it persists on page refreshes as the active session
+        localStorage.setItem('prismax_design_v2', p.state);
+        
+        // Trigger Studio
+        startStudio(p.ratio.w, p.ratio.h, p.state);
+        showToast(`Loaded "${p.name}" successfully! ✨`);
+    } catch (e) {
+        console.error(e);
+        showToast('Error loading project', true);
+    }
+}
+
+function deleteSavedProject(projectId) {
+    try {
+        const saved = localStorage.getItem('prismax_saved_projects');
+        if (!saved) return;
+        const projects = JSON.parse(saved);
+        const p = projects.find(proj => proj.id === projectId);
+        if (!p) return;
+        
+        if (!confirm(`Are you sure you want to delete "${p.name}"? This action cannot be undone.`)) return;
+        
+        const filtered = projects.filter(proj => proj.id !== projectId);
+        localStorage.setItem('prismax_saved_projects', JSON.stringify(filtered));
+        
+        showToast(`Project "${p.name}" deleted`);
+        
+        // If this was the active recovery design, clean it up as well
+        const currentRecovery = localStorage.getItem('prismax_design_v2');
+        if (currentRecovery && currentRecovery.includes(projectId)) {
+            localStorage.removeItem('prismax_design_v2');
+        }
+        
+        updateSavedProjectsCount();
+        renderSavedProjectsGrid();
+    } catch (e) {
+        console.error(e);
+        showToast('Failed to delete project', true);
+    }
+}
+
+// Map key event functions to global window object so inline event handlers can bind securely
+window.loadSavedProject = loadSavedProject;
+window.deleteSavedProject = deleteSavedProject;
+window.triggerSaveProjectFlow = triggerSaveProjectFlow;
 

@@ -33,28 +33,50 @@
 
     <!-- Startup Ratio Modal -->
     <div id="startup_modal" class="modal-overlay">
-        <div class="modal-content gold-theme">
-            <h1>PrismaX Content Maker by Ayush</h1>
-            <p>Select your canvas ratio to begin</p>
-            <div class="ratio-grid">
-                <button class="ratio-btn" data-width="1080" data-height="1080">
-                    <div class="shape square"></div>1:1 (Square)
-                </button>
-                <button class="ratio-btn" data-width="1920" data-height="1080">
-                    <div class="shape landscape"></div>16:9 (Video)
-                </button>
-                <button class="ratio-btn" data-width="1080" data-height="1920">
-                    <div class="shape portrait"></div>9:16 (Story)
-                </button>
-                <button class="ratio-btn" data-width="1080" data-height="1440">
-                    <div class="shape threefour"></div>3:4 (Portrait)
-                </button>
+        <div class="modal-content gold-theme" style="max-width: 480px; width: 90%;">
+            <h1>PrismaX Content Maker</h1>
+            
+            <!-- Dashboard Tab Bar -->
+            <div class="tab-subnav" style="display: flex; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); width: 100%;">
+                <button class="sub-tab active" id="btn_new_canvas_tab" style="flex: 1; text-align: center; padding: 10px 0; font-family:'Montserrat', sans-serif; font-weight:700; letter-spacing:0.5px; cursor: pointer;">New Canvas</button>
+                <button class="sub-tab" id="btn_saved_projects_tab" style="flex: 1; text-align: center; padding: 10px 0; font-family:'Montserrat', sans-serif; font-weight:700; letter-spacing:0.5px; cursor: pointer;">My Projects (<span id="saved_projects_count">0</span>)</button>
             </div>
-            <div class="custom-ratio">
-                <input type="number" id="custom_w" placeholder="W" value="800">
-                <span style="color:var(--primary-gold)">x</span>
-                <input type="number" id="custom_h" placeholder="H" value="600">
-                <button id="btn_custom_ratio" class="gold-btn">Set Custom</button>
+
+            <!-- New Canvas Section -->
+            <div id="section_new_canvas" class="startup-section active" style="width: 100%;">
+                <p style="margin-bottom: 15px;">Select your canvas ratio to begin</p>
+                <div class="ratio-grid">
+                    <button class="ratio-btn" data-width="1080" data-height="1080">
+                        <div class="shape square"></div>1:1 (Square)
+                    </button>
+                    <button class="ratio-btn" data-width="1920" data-height="1080">
+                        <div class="shape landscape"></div>16:9 (Video)
+                    </button>
+                    <button class="ratio-btn" data-width="1080" data-height="1920">
+                        <div class="shape portrait"></div>9:16 (Story)
+                    </button>
+                    <button class="ratio-btn" data-width="1080" data-height="1440">
+                        <div class="shape threefour"></div>3:4 (Portrait)
+                    </button>
+                </div>
+                <div class="custom-ratio">
+                    <input type="number" id="custom_w" placeholder="W" value="800">
+                    <span style="color:var(--primary-gold)">x</span>
+                    <input type="number" id="custom_h" placeholder="H" value="600">
+                    <button id="btn_custom_ratio" class="gold-btn">Set Custom</button>
+                </div>
+            </div>
+
+            <!-- Saved Projects Section -->
+            <div id="section_saved_projects" class="startup-section" style="display: none; width: 100%;">
+                <p style="margin-bottom: 15px;">Pick up where you left off in your cache</p>
+                <div id="saved_projects_grid" class="saved-projects-grid custom-scrollbar" style="max-height: 280px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; padding-right: 5px;">
+                    <!-- Populated dynamically via JS -->
+                </div>
+                <div id="saved_projects_empty" style="text-align: center; padding: 40px 10px; opacity: 0.6; display: none;">
+                    <i class="fa-solid fa-folder-open" style="font-size: 2.2rem; color: var(--primary-gold); margin-bottom: 12px; display: block;"></i>
+                    <p style="font-size: 0.8rem; font-family: 'Montserrat', sans-serif; margin: 0;">No saved projects found.<br>Create a new canvas to start!</p>
+                </div>
             </div>
         </div>
     </div>
@@ -506,9 +528,9 @@
                     <button id="btn_undo" title="Undo (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
                     <button id="btn_redo" title="Redo (Ctrl+Y)"><i class="fa-solid fa-rotate-right"></i></button>
 
-                    <button id="btn_save_progress" title="Save Progress (Merge All)"
+                    <button id="btn_save_progress" title="Save Project to Cache Memory"
                         style="color: var(--primary-gold); font-family: 'Montserrat', sans-serif; font-size: 0.75rem; width: auto; padding: 0 10px; margin-left: 5px; border: 1px solid var(--border-gold); background: var(--bg-dark); border-radius: 4px; border-width: 1px;">
-                        <i class="fa-solid fa-layer-group" style="padding-right: 4px;"></i> Save Progress
+                        <i class="fa-solid fa-floppy-disk" style="padding-right: 4px;"></i> Save Project
                     </button>
 
                     <button id="btn_play_anim" title="Play 5s Cinematic Presentation Animation"
