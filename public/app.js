@@ -972,51 +972,57 @@ function initFabric() {
     window.addEventListener('pointerdown', (e) => {
         if (!canvas) return;
         
-        let target = e.target;
-        let clickedInsideUI = false;
-        
-        while (target && target !== document.body) {
-            if (target.id === 'c' || 
-                target.classList.contains('canvas-container') || 
-                target.id === 'canvas_container' ||
-                target.id === 'left_sidebar' || 
-                target.id === 'right_sidebar' || 
-                target.classList.contains('sidebar') ||
-                target.id === 'mobile_bottom_nav' || 
-                target.id === 'mob_object_bar' || 
-                target.id === 'quick_access_toolbar' || 
-                target.classList.contains('mobile-nav') || 
-                target.classList.contains('mobile-sub-tabs') ||
-                target.classList.contains('modal-overlay') || 
-                target.classList.contains('templates-modal-container') || 
-                target.classList.contains('sweet-alert') ||
-                target.classList.contains('sp-container') ||
-                target.classList.contains('clr-picker') ||
-                target.classList.contains('toastify') ||
-                target.classList.contains('toast') ||
-                target.tagName === 'INPUT' || 
-                target.tagName === 'SELECT' || 
-                target.tagName === 'BUTTON' || 
-                target.tagName === 'TEXTAREA' ||
-                target.tagName === 'OPTION' ||
-                target.tagName === 'A' ||
-                target.classList.contains('btn') ||
-                target.classList.contains('nav-tab') ||
-                target.classList.contains('template-cat-pill') ||
-                target.classList.contains('sub-tab') ||
-                target.classList.contains('asset-item') ||
-                target.classList.contains('template-card')) {
-                clickedInsideUI = true;
-                break;
+        try {
+            let target = e.target;
+            let clickedInsideUI = false;
+            
+            while (target && target !== document.body) {
+                const hasClass = (className) => target.classList && typeof target.classList.contains === 'function' && target.classList.contains(className);
+                
+                if (target.id === 'c' || 
+                    hasClass('canvas-container') || 
+                    target.id === 'canvas_container' ||
+                    target.id === 'left_sidebar' || 
+                    target.id === 'right_sidebar' || 
+                    hasClass('sidebar') ||
+                    target.id === 'mobile_bottom_nav' || 
+                    target.id === 'mob_object_bar' || 
+                    target.id === 'quick_access_toolbar' || 
+                    hasClass('mobile-nav') || 
+                    hasClass('mobile-sub-tabs') ||
+                    hasClass('modal-overlay') || 
+                    hasClass('templates-modal-container') || 
+                    hasClass('sweet-alert') ||
+                    hasClass('sp-container') ||
+                    hasClass('clr-picker') ||
+                    hasClass('toastify') ||
+                    hasClass('toast') ||
+                    target.tagName === 'INPUT' || 
+                    target.tagName === 'SELECT' || 
+                    target.tagName === 'BUTTON' || 
+                    target.tagName === 'TEXTAREA' ||
+                    target.tagName === 'OPTION' ||
+                    target.tagName === 'A' ||
+                    hasClass('btn') ||
+                    hasClass('nav-tab') ||
+                    hasClass('template-cat-pill') ||
+                    hasClass('sub-tab') ||
+                    hasClass('asset-item') ||
+                    hasClass('template-card')) {
+                    clickedInsideUI = true;
+                    break;
+                }
+                target = target.parentElement;
             }
-            target = target.parentElement;
-        }
-        
-        if (!clickedInsideUI) {
-            if (canvas.getActiveObject()) {
-                canvas.discardActiveObject();
-                canvas.requestRenderAll();
+            
+            if (!clickedInsideUI) {
+                if (canvas.getActiveObject()) {
+                    canvas.discardActiveObject();
+                    canvas.requestRenderAll();
+                }
             }
+        } catch (err) {
+            console.error("[Pointer Listener Error]", err);
         }
     });
 
