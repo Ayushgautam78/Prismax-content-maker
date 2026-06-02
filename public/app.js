@@ -1202,8 +1202,16 @@ function initFabric() {
     canvas.on('selection:cleared', (e) => { updateConnections(); updatePropsPanel(); updateLayersPanel(); updateMobileObjectBar(); });
 
     canvas.on('object:modified', () => { updatePropsPanel(); saveHistory(); updateLayersPanel(); });
-    canvas.on('object:added', () => { if (!isHistoryAction) { saveHistory(); updateLayersPanel(); } });
-    canvas.on('object:removed', () => { if (!isHistoryAction) { saveHistory(); updateLayersPanel(); } });
+    canvas.on('object:added', (opt) => {
+        const obj = opt && opt.target;
+        if (obj && (obj.id === 'guide' || obj.isGuide || obj.id === 'crop_box_temp')) return;
+        if (!isHistoryAction) { saveHistory(); updateLayersPanel(); }
+    });
+    canvas.on('object:removed', (opt) => {
+        const obj = opt && opt.target;
+        if (obj && (obj.id === 'guide' || obj.isGuide || obj.id === 'crop_box_temp')) return;
+        if (!isHistoryAction) { saveHistory(); updateLayersPanel(); }
+    });
 
     // ========== DRAG AND DROP OBJECT SNAP LOGIC (CANVA STYLE) ==========
     canvas.on('object:moving', (opt) => {
@@ -3957,7 +3965,7 @@ function snapCenter(obj) {
     if (Math.abs(center.x - cvsCenterV) < threshold) {
         let originOffset = obj.originX === 'center' ? 0 : obj.getScaledWidth() / 2;
         obj.set({ left: cvsCenterV - originOffset });
-        vLine = new fabric.Line([cvsCenterV, 0, cvsCenterV, virtualFormat.h], { stroke: '#D4AF37', strokeWidth: 2, selectable: false, evented: false, strokeDashArray: [10, 5] });
+        vLine = new fabric.Line([cvsCenterV, 0, cvsCenterV, virtualFormat.h], { stroke: '#D4AF37', strokeWidth: 2, selectable: false, evented: false, strokeDashArray: [10, 5], id: 'guide', isGuide: true });
         canvas.add(vLine);
         snapX = true;
     }
@@ -3965,7 +3973,7 @@ function snapCenter(obj) {
     if (Math.abs(center.y - cvsCenterH) < threshold) {
         let originOffset = obj.originY === 'center' ? 0 : obj.getScaledHeight() / 2;
         obj.set('top', cvsCenterH - originOffset);
-        hLine = new fabric.Line([0, cvsCenterH, virtualFormat.w, cvsCenterH], { stroke: '#D4AF37', strokeWidth: 2, selectable: false, evented: false, strokeDashArray: [10, 5] });
+        hLine = new fabric.Line([0, cvsCenterH, virtualFormat.w, cvsCenterH], { stroke: '#D4AF37', strokeWidth: 2, selectable: false, evented: false, strokeDashArray: [10, 5], id: 'guide', isGuide: true });
         canvas.add(hLine);
         snapY = true;
     }
@@ -3979,7 +3987,7 @@ function snapCenter(obj) {
         if (!snapX && Math.abs(center.x - targetCenter.x) < threshold) {
             let originOffset = obj.originX === 'center' ? 0 : obj.getScaledWidth() / 2;
             obj.set({ left: targetCenter.x - originOffset });
-            const line = new fabric.Line([targetCenter.x, 0, targetCenter.x, virtualFormat.h], { stroke: '#FFE566', strokeWidth: 1, selectable: false, evented: false, strokeDashArray: [5, 5], id: 'guide' });
+            const line = new fabric.Line([targetCenter.x, 0, targetCenter.x, virtualFormat.h], { stroke: '#FFE566', strokeWidth: 1, selectable: false, evented: false, strokeDashArray: [5, 5], id: 'guide', isGuide: true });
             canvas.add(line);
             smartGuides.push(line);
             snapX = true;
@@ -3988,7 +3996,7 @@ function snapCenter(obj) {
         if (!snapY && Math.abs(center.y - targetCenter.y) < threshold) {
             let originOffset = obj.originY === 'center' ? 0 : obj.getScaledHeight() / 2;
             obj.set({ top: targetCenter.y - originOffset });
-            const line = new fabric.Line([0, targetCenter.y, virtualFormat.w, targetCenter.y], { stroke: '#FFE566', strokeWidth: 1, selectable: false, evented: false, strokeDashArray: [5, 5], id: 'guide' });
+            const line = new fabric.Line([0, targetCenter.y, virtualFormat.w, targetCenter.y], { stroke: '#FFE566', strokeWidth: 1, selectable: false, evented: false, strokeDashArray: [5, 5], id: 'guide', isGuide: true });
             canvas.add(line);
             smartGuides.push(line);
             snapY = true;
