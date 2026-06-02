@@ -97,27 +97,40 @@ document.addEventListener("DOMContentLoaded", () => {
         const leftSidebar = document.getElementById('left_sidebar');
         const rightSidebar = document.getElementById('right_sidebar');
         
-        let closedSomething = false;
-        
         // 1. Close active full-screen modals first
         if (templatesModal && !templatesModal.classList.contains('hidden')) {
-            closeTemplatesModal(true);
-            closedSomething = true;
+            if (typeof closeTemplatesModal === 'function') {
+                closeTemplatesModal(true);
+            } else {
+                templatesModal.classList.add('hidden');
+            }
         }
         if (aiModal && !aiModal.classList.contains('hidden')) {
-            closeAIModal(true);
-            closedSomething = true;
+            if (typeof closeAIModal === 'function') {
+                closeAIModal(true);
+            } else {
+                aiModal.classList.add('hidden');
+            }
         }
         if (exportModal && !exportModal.classList.contains('hidden')) {
-            closeExportModal(true);
-            closedSomething = true;
+            if (typeof window.closeExportModal === 'function') {
+                window.closeExportModal(true);
+            } else {
+                exportModal.classList.add('hidden');
+            }
         }
         
         // 2. Close active slide-out sheets
         if ((leftSidebar && leftSidebar.classList.contains('sheet-open')) || 
             (rightSidebar && rightSidebar.classList.contains('sheet-open'))) {
-            closeMobileSheets(true);
-            closedSomething = true;
+            if (typeof closeMobileSheets === 'function') {
+                closeMobileSheets(true);
+            } else {
+                leftSidebar?.classList.remove('sheet-open');
+                rightSidebar?.classList.remove('sheet-open');
+                const backdrop = document.getElementById('mob_sheet_backdrop');
+                if (backdrop) backdrop.classList.remove('visible');
+            }
         }
     });
 
