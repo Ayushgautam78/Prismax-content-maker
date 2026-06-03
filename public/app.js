@@ -4921,12 +4921,17 @@ async function performBackgroundRemoval() {
         
         console.log("[AI Background Removal] Processing image source:", src);
         
+        const selectedModel = document.getElementById('select_ai_bg_model')?.value || 'large';
+        const sizeMap = { large: '~80MB', medium: '~40MB', small: '~10MB' };
+        const modelSizeText = sizeMap[selectedModel];
+        
         const resultBlob = await imgly.removeBackground(src, {
+            model: selectedModel,
             progress: (key, current, total) => {
                 const pct = Math.round((current / total) * 100);
                 progressBar.style.width = `${pct}%`;
                 if (key === 'fetch') {
-                    subtitle.innerText = `Downloading local AI neural models (~40MB, cached subsequently)...`;
+                    subtitle.innerText = `Downloading local AI neural models (${modelSizeText}, cached subsequently)...`;
                     progressText.innerText = `Downloading: ${pct}%`;
                 } else {
                     subtitle.innerText = `Segmenting image foreground and removing background...`;
